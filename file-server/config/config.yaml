@@ -1,0 +1,4 @@
+nas_root_path: /nas
+scan_option: 
+  extensions: 
+  - "jpg"
