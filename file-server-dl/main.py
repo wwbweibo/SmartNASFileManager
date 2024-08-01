@@ -15,7 +15,7 @@ def FileTypeInterfer():
         'description': result[2]
     }
 
-@app.route('/api/v1/file/image_lable', methods=['POST'])
+@app.route('/api/v1/file/image_label', methods=['POST'])
 def ImageLabel():
     data = request.get_json()
     result = image_label(data['path'])
