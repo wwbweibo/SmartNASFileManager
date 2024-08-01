@@ -1,8 +1,7 @@
 from magika import Magika
-import socketserver
 from flask import Flask, request
 from service.file_interferer import interfer_file_type
-
+from service.image_label import image_label
 
 app = Flask(__name__)
 # m = Magika()
@@ -16,6 +15,13 @@ def FileTypeInterfer():
         'description': result[2]
     }
 
+@app.route('/api/v1/file/image_lable', methods=['POST'])
+def ImageLabel():
+    data = request.get_json()
+    result = image_label(data['path'])
+    return {
+        'labels': result
+    }
 
 if __name__ == "__main__":
     # start an  http server here
