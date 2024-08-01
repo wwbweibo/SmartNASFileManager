@@ -17,7 +17,7 @@ with torch.no_grad():
     text_feature = model.encode_text(labels)
     text_feature /= text_feature.norm(dim=-1, keepdim=True)
 
-def label_image(path: str) -> list[str]:
+def label_image(path: str) -> list[dict]:
     image = preprocess(Image.open(path)).unsqueeze(0).to(device)
     with torch.no_grad():
         image_features = model.encode_image(image)
@@ -28,5 +28,8 @@ def label_image(path: str) -> list[str]:
     # print("Label and confidence:")
     predictions = []
     for value, index in zip(values, indices):
-        predictions.append(f"{text_labels[index]}: {100 * value.item():.2f}%")
+        predictions.append({
+            'label': text_labels[index],
+            'confidence': f"{100 * value.item():.2f}%"
+        })
     return predictions
