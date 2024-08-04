@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 type ScanOptions struct {
@@ -98,36 +99,34 @@ func StartFileScanner(ctx context.Context, c chan string, repo IFileRepository) 
 
 func singleFileHandler(ctx context.Context, file string, repo IFileRepository) {
 	log.Default().Printf("handling file %s", file)
-	// insert into database
-	fileType, fileGroup, fileDescription, err := FileInfer(ctx, file)
-	if err != nil {
-		log.Default().Printf("error getting file type: %v", err)
-		return
-	}
 	_file := NewFile(file)
-	_file.SetFileType(fileType, fileGroup, fileDescription)
-	// 如果为图片文件，对图像进行标注
-	if fileGroup == "image" {
-		var labels []string
-		labels, err = ImageLabel(ctx, file)
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		result, err := understanding(ctx, file)
 		if err != nil {
-			log.Default().Printf("error getting image label: %v", err)
+			log.Default().Printf("error getting file type: %v", err)
 			return
 		}
-		if len(labels) > 0 {
-			_file.Tags = strings.Join(labels, ",")
-		}
-	}
-	err = repo.CreateOrUpdateFile(ctx, _file)
+		_file.SetFileTypeFromUnderstanding(result)
+	}()
+	go func() {
+		defer wg.Done()
+		_file.Checksum = utils.Sha256(file)
+	}()
+	// insert into database
+	wg.Wait()
+	err := repo.CreateOrUpdateFile(ctx, _file)
 	if err != nil {
 		log.Default().Printf("error inserting file %s: %v", file, err)
 	}
 }
 
-// FileInfer is a function to determine the file type
-func FileInfer(ctx context.Context, file string) (t string, g string, d string, err error) {
+// understanding is a function to determine the file type, and tring to label and caption this image
+func understanding(ctx context.Context, file string) (r understandingResult, err error) {
 	data := bytes.NewBuffer([]byte(fmt.Sprintf(`{"path": "%s"}`, file)))
-	request, _ := http.NewRequest(http.MethodPost, "http://localhost:8081/api/v1/file/interfer", data)
+	request, _ := http.NewRequest(http.MethodPost, "http://192.168.163.65:8081/api/v1/file/understanding", data)
 	request.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
@@ -135,40 +134,19 @@ func FileInfer(ctx context.Context, file string) (t string, g string, d string, 
 		return
 	}
 	defer resp.Body.Close()
-	type response struct {
-		Type        string `json:"type"`
-		Group       string `json:"group"`
-		Description string `json:"description"`
-	}
+
 	bts, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Default().Printf("error reading response body: %v", err)
 		return
 	}
-	var r response
 	json.Unmarshal(bts, &r)
-	return r.Type, r.Group, r.Description, nil
+	return
 }
 
-func ImageLabel(ctx context.Context, file string) (labels []string, err error) {
-	data := bytes.NewBuffer([]byte(fmt.Sprintf(`{"path": "%s"}`, file)))
-	request, _ := http.NewRequest(http.MethodPost, "http://localhost:8081/api/v1/file/image_label", data)
-	request.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(request)
-	if err != nil {
-		log.Default().Printf("error getting file type: %v", err)
-		return
-	}
-	defer resp.Body.Close()
-	type response struct {
-		Label      string `json:"label"`
-		Confidence string `json:"confidence"`
-	}
-	var r []response
-	bts, err := io.ReadAll(resp.Body)
-	json.Unmarshal(bts, &r)
-	for _, l := range r {
-		labels = append(labels, l.Label)
-	}
-	return
+type understandingResult struct {
+	Label       string `json:"label"`
+	Group       string `json:"group"`
+	Description string `json:"description"`
+	Extension   any    `json:"extension"`
 }

@@ -1,6 +1,9 @@
 package utils
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
 	"log"
 	"os"
 	"path"
@@ -62,4 +65,19 @@ func GetExtension(f string) string {
 		}
 	}
 	return ""
+}
+
+func Sha256(path string) string {
+	file, err := os.Open(path)
+	if err != nil {
+		log.Default().Fatalf("error opening file %s: %v", path, err)
+	}
+	defer file.Close()
+
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		log.Default().Fatalf("error calculating SHA256 for file %s: %v", path, err)
+	}
+
+	return hex.EncodeToString(hash.Sum(nil))
 }

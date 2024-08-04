@@ -19,5 +19,5 @@ class FileUnderstandingResult:
             'label': self.label,
             'group': self.group,
             'description': self.description,
-            'extension': self.ext
+            'extension': self.ext.to_dict() if self.ext is not None else None
         }

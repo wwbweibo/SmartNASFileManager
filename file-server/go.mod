@@ -5,9 +5,12 @@ go 1.22.4
 require (
 	go.mongodb.org/mongo-driver v1.15.1
 	gopkg.in/yaml.v2 v2.4.0
+	gorm.io/driver/sqlite v1.5.6
+	gorm.io/gorm v1.25.10
 )
 
 require (
+	github.com/ahmetb/go-linq/v3 v3.2.0
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
@@ -21,6 +24,4 @@ require (
 	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	gorm.io/driver/sqlite v1.5.6 // indirect
-	gorm.io/gorm v1.25.10 // indirect
 )

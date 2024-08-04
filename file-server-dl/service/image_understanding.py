@@ -15,6 +15,7 @@ class ImageUnderstanding:
         self.caption_model = None
         self.caption_vis_processors = None
         self.__init_clip_model__()
+        self.__init_caption_model__()
 
     def __init_clip_model__(self):
         self.clip_model, self.clip_preprocess = load_from_name("ViT-B-16", device=self.device, download_root="./")
