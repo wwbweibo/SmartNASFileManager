@@ -40,8 +40,8 @@ func (r *FileRepository) ListFileByDirectory(ctx context.Context, directory stri
 
 func (r *FileRepository) CreateOrUpdateFile(ctx context.Context, file File) (err error) {
 	return r.db.Exec(`insert into files 
-	(path, directory, extension, type, "group", description, tags ) values 
-	(?,?,?,?,?,?,?) on conflict(path) do update set directory = ?, extension = ?, type = ?, "group"=?, description=? , tags = ?;`,
-		file.Path, file.Directory, file.Extension, file.Type, file.Group, file.Description, file.Tags,
-		file.Directory, file.Extension, file.Type, file.Group, file.Description, file.Tags).Error
+	(path, directory, extension, type, "group", description, tags, caption, checksum ) values 
+	(?,?,?,?,?,?,?,?,?) on conflict(path) do update set directory = ?, extension = ?, type = ?, "group"=?, description=? , tags = ?,  caption = ?, checksum = ?;`,
+		file.Path, file.Directory, file.Extension, file.Type, file.Group, file.Description, file.Tags, file.Caption, file.Checksum,
+		file.Directory, file.Extension, file.Type, file.Group, file.Description, file.Tags, file.Caption, file.Checksum).Error
 }
