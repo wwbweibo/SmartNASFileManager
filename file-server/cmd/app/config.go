@@ -9,8 +9,10 @@ import (
 )
 
 type Config struct {
-	NasRootPath string `json:"nas_root_path" yaml:"nas_root_path"`
-	ScanOption  struct {
+	// StartWithBackendScan is a flag to start with backend scan, if true, the program will start with backend scan
+	StartWithBackendScan bool   `json:"start_with_backend_scan" yaml:"start_with_backend_scan"`
+	NasRootPath          string `json:"nas_root_path" yaml:"nas_root_path"`
+	ScanOption           struct {
 		Path       []string `json:"path" yaml:"path"`
 		RegexPath  []string `json:"regex_path" yaml:"regex_path"`
 		Extensions []string `json:"extensions" yaml:"extensions"`

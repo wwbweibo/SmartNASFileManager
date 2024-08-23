@@ -2,6 +2,7 @@ package file
 
 import (
 	"encoding/json"
+	"fileserver/internal/adapters/dl"
 	"fileserver/utils"
 	"strings"
 
@@ -37,14 +38,14 @@ func (f *File) SetFileType(ttype, group, description string) {
 	f.Description = description
 }
 
-func (f *File) SetFileTypeFromUnderstanding(understanding understandingResult) {
+func (f *File) SetFileTypeFromUnderstanding(understanding dl.UnderstandingResult) {
 	f.Type = understanding.Label
 	f.Group = understanding.Group
 	f.Description = understanding.Description
-	f.setupFileExtionsionInfo(understanding)
+	f.setupFileExtensionInfo(understanding)
 }
 
-func (f *File) setupFileExtionsionInfo(understanding understandingResult) {
+func (f *File) setupFileExtensionInfo(understanding dl.UnderstandingResult) {
 	if understanding.Extension == nil {
 		return
 	}

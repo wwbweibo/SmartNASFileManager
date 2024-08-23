@@ -1,14 +1,10 @@
 package file
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
+	"fileserver/internal/adapters/dl"
 	"fileserver/utils"
-	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"regexp"
 	"strings"
 	"sync"
@@ -104,7 +100,13 @@ func singleFileHandler(ctx context.Context, file string, repo IFileRepository) {
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		result, err := understanding(ctx, file)
+		result, err := dl.NewClient(dl.Config{
+			Scheme: "http",
+			Host:   "localhost",
+			Port:   8081,
+		}).Understanding(ctx, dl.UnderstandingRequest{
+			Path: file,
+		})
 		if err != nil {
 			log.Default().Printf("error getting file type: %v", err)
 			return
@@ -121,32 +123,4 @@ func singleFileHandler(ctx context.Context, file string, repo IFileRepository) {
 	if err != nil {
 		log.Default().Printf("error inserting file %s: %v", file, err)
 	}
-}
-
-// understanding is a function to determine the file type, and tring to label and caption this image
-func understanding(ctx context.Context, file string) (r understandingResult, err error) {
-	data := bytes.NewBuffer([]byte(fmt.Sprintf(`{"path": "%s"}`, file)))
-	request, _ := http.NewRequest(http.MethodPost, "http://192.168.163.65:8081/api/v1/file/understanding", data)
-	request.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(request)
-	if err != nil {
-		log.Default().Printf("error getting file type: %v", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	bts, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Default().Printf("error reading response body: %v", err)
-		return
-	}
-	json.Unmarshal(bts, &r)
-	return
-}
-
-type understandingResult struct {
-	Label       string `json:"label"`
-	Group       string `json:"group"`
-	Description string `json:"description"`
-	Extension   any    `json:"extension"`
 }

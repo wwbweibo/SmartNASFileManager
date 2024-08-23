@@ -2,11 +2,16 @@ package main
 
 import (
 	"context"
-	"fileserver/file"
+	"fileserver/internal/controllers"
+	"fileserver/internal/domain/file"
+	"fileserver/internal/server"
+	"fileserver/internal/tasks"
 	"fileserver/utils"
-	"fmt"
 	"log"
-	"net/http"
+
+	domainFile "fileserver/internal/domain/file"
+
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
@@ -14,23 +19,43 @@ func main() {
 	defer cancelF()
 	config := &Config{}
 	config.Load("config/config.yaml")
-	fileScanOption := file.ScanOptions{}
-	fileScanOption = fileScanOption.OptionPlainPath(config.ScanOption.Path...).
-		OptionRegexPath(config.ScanOption.RegexPath...).
-		OptionExtensions(config.ScanOption.Extensions...)
 
 	dbconnection := utils.NewDbConnection()
 	fileRepo := file.NewFileRepository(dbconnection)
-	fileChan := make(chan string, 10)
-	go file.StartFileScanner(ctx, fileChan, fileRepo)
-	go file.ScanAndUpdateFiles(ctx, config.NasRootPath, fileScanOption, fileChan)
-	// start a http server here
-	http.HandleFunc("/", handler)
-	// handle for static files
-	http.Handle("/nas/", http.FileServer(http.Dir(config.NasRootPath)))
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	taskServer := initTaskServer(*config, fileRepo)
+	ginServer := initGinServer(*config)
+	errGroup := errgroup.Group{}
+	errGroup.Go(func() error {
+		return taskServer.Start(ctx)
+	})
+	errGroup.Go(func() error {
+		return ginServer.Start(ctx)
+	})
+	if err := errGroup.Wait(); err != nil {
+		log.Fatal(err)
+	}
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, World!")
+func initTaskServer(config Config,
+	fileRepo domainFile.IFileRepository,
+) *server.BackendTaskServer {
+	taskServer := server.NewBackendTaskServer()
+	fileScanOption := tasks.ScanOptions{}
+	fileScanOption = fileScanOption.
+		OptionRootPath(config.NasRootPath).
+		OptionPlainPath(config.ScanOption.Path...).
+		OptionRegexPath(config.ScanOption.RegexPath...).
+		OptionExtensions(config.ScanOption.Extensions...)
+	// register tasks here
+	taskServer.RegisterTask(
+		tasks.NewSysInitBackendTask(fileScanOption, fileRepo),
+	)
+	return taskServer
+}
+
+func initGinServer(config Config) *server.GinServer {
+	server := server.NewGinServer()
+	fileController := controllers.NewFileApiControllers()
+	server.RegisterController(fileController)
+	return server
 }
