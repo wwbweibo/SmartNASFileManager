@@ -81,3 +81,17 @@ func Sha256(path string) string {
 
 	return hex.EncodeToString(hash.Sum(nil))
 }
+
+func GetFileSize(path string) int64 {
+	file, err := os.Open(path)
+	if err != nil {
+		log.Default().Fatalf("error opening file %s: %v", path, err)
+	}
+	defer file.Close()
+
+	stat, err := file.Stat()
+	if err != nil {
+		log.Default().Fatalf("error getting file stat for file %s: %v", path, err)
+	}
+	return stat.Size()
+}

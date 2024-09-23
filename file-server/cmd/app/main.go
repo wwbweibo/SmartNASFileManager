@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fileserver/internal/biz"
 	"fileserver/internal/controllers"
 	"fileserver/internal/domain/file"
 	"fileserver/internal/server"
@@ -23,7 +24,7 @@ func main() {
 	dbconnection := utils.NewDbConnection()
 	fileRepo := file.NewFileRepository(dbconnection)
 	taskServer := initTaskServer(*config, fileRepo)
-	ginServer := initGinServer(*config)
+	ginServer := initGinServer(*config, fileRepo)
 	errGroup := errgroup.Group{}
 	errGroup.Go(func() error {
 		return taskServer.Start(ctx)
@@ -48,14 +49,15 @@ func initTaskServer(config Config,
 		OptionExtensions(config.ScanOption.Extensions...)
 	// register tasks here
 	taskServer.RegisterTask(
-		tasks.NewSysInitBackendTask(fileScanOption, fileRepo),
+		tasks.NewSysInitBackendTask(fileScanOption, fileRepo, config.DLConfiguration),
 	)
 	return taskServer
 }
 
-func initGinServer(config Config) *server.GinServer {
+func initGinServer(config Config, fileRepository file.IFileRepository) *server.GinServer {
 	server := server.NewGinServer()
-	fileController := controllers.NewFileApiControllers()
+	fileService := biz.NewFilerService(fileRepository)
+	fileController := controllers.NewFileApiControllers(fileService)
 	server.RegisterController(fileController)
 	return server
 }

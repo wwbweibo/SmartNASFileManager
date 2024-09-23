@@ -13,6 +13,7 @@ import (
 type File struct {
 	gorm.Model
 	Path        string `gorm:"uniqueindex"`
+	Name        string
 	Directory   string
 	Extension   string
 	Type        string
@@ -21,12 +22,14 @@ type File struct {
 	Tags        string
 	Caption     string
 	Checksum    string
+	Size        int64
 }
 
 func NewFile(path string) File {
 	// calc sha256 hash checksum
 	return File{
 		Path:      path,
+		Name:      utils.GetFileName(path),
 		Directory: utils.GetDirectory(path),
 		Extension: utils.GetExtension(path),
 	}

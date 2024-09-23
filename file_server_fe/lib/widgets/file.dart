@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
 class File extends StatefulWidget {
-  File(String fileName, {Key? key}) {
-    this.fileName = fileName;
-  }
-  var fileName = "file_name";
+  const File({Key? key, required this.fileName}) : super(key: key);
+  final String fileName;
   @override
   _FileState createState() => _FileState();
 }

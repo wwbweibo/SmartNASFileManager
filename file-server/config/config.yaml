@@ -1,4 +1,9 @@
-nas_root_path: /nas
+nas_root_path: /Users/weibo/code/myself/anfm/tests
 scan_option: 
   extensions: 
   - "jpg"
+dl_configuration:
+  scheme: http
+  host: localhost
+  port: 8081
+  timeout: 10

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fileserver/internal/adapters/dl"
 	"os"
 	"strings"
 
@@ -17,6 +18,7 @@ type Config struct {
 		RegexPath  []string `json:"regex_path" yaml:"regex_path"`
 		Extensions []string `json:"extensions" yaml:"extensions"`
 	} `json:"scan_option" yaml:"scan_option"`
+	DLConfiguration dl.Config `json:"dl_configuration" yaml:"dl_configuration"`
 }
 
 func (c *Config) Load(path string) {

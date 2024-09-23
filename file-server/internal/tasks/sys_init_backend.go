@@ -72,12 +72,14 @@ type SysInitBackendTask struct {
 	startTime time.Time
 	option    ScanOptions
 	repo      domainFile.IFileRepository
+	dlConfig  dl.Config
 }
 
-func NewSysInitBackendTask(option ScanOptions, repo domainFile.IFileRepository) *SysInitBackendTask {
+func NewSysInitBackendTask(option ScanOptions, repo domainFile.IFileRepository, dlConfig dl.Config) *SysInitBackendTask {
 	return &SysInitBackendTask{
-		option: option,
-		repo:   repo,
+		option:   option,
+		repo:     repo,
+		dlConfig: dlConfig,
 	}
 }
 
@@ -94,12 +96,13 @@ func (s *SysInitBackendTask) Start(ctx context.Context) error {
 	files := utils.WalkDir(s.option.RootPath)
 	log.Default().Printf("found %d files", len(files))
 	for _, file := range files {
-		if <-ctx.Done(); ctx.Err() != nil {
+		select {
+		case <-ctx.Done():
 			break
-		}
-		// check if file in option path
-		if s.option.fileInPath(file) || s.option.fileInRegexPath(file) || s.option.fileInExtensions(file) {
-			s.singleFileHandler(ctx, file)
+		default:
+			if s.option.fileInPath(file) || s.option.fileInRegexPath(file) || s.option.fileInExtensions(file) {
+				s.singleFileHandler(ctx, file)
+			}
 		}
 	}
 	return nil
@@ -111,16 +114,13 @@ func (s *SysInitBackendTask) Stop(ctx context.Context) error {
 
 func (s *SysInitBackendTask) singleFileHandler(ctx context.Context, file string) {
 	log.Default().Printf("handling file %s", file)
+	file = strings.Replace(file, s.option.RootPath, "", 1)
 	_file := domainFile.NewFile(file)
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		result, err := dl.NewClient(dl.Config{
-			Scheme: "http",
-			Host:   "localhost",
-			Port:   8081,
-		}).Understanding(ctx, dl.UnderstandingRequest{
+		result, err := dl.NewClient(s.dlConfig).Understanding(ctx, dl.UnderstandingRequest{
 			Path: file,
 		})
 		if err != nil {
@@ -131,7 +131,8 @@ func (s *SysInitBackendTask) singleFileHandler(ctx context.Context, file string)
 	}()
 	go func() {
 		defer wg.Done()
-		_file.Checksum = utils.Sha256(file)
+		_file.Checksum = utils.Sha256(s.option.RootPath + file)
+		_file.Size = utils.GetFileSize(s.option.RootPath + file)
 	}()
 	// insert into database
 	wg.Wait()

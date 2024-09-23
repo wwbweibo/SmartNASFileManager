@@ -9,11 +9,16 @@ type BackendTaskServer struct {
 }
 
 func NewBackendTaskServer() *BackendTaskServer {
-	return &BackendTaskServer{}
+	return &BackendTaskServer{
+		tasks: make(map[string]BackendTask),
+	}
 }
 
 func (b *BackendTaskServer) Start(ctx context.Context) error {
 	// start a http server here
+	for _, task := range b.tasks {
+		task.Start(ctx)
+	}
 	return nil
 }
 
