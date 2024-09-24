@@ -56,6 +56,7 @@ func initTaskServer(config Config,
 
 func initGinServer(config Config, fileRepository file.IFileRepository) *server.GinServer {
 	server := server.NewGinServer()
+	server.UseStatic("/static", config.NasRootPath)
 	fileService := biz.NewFilerService(fileRepository)
 	fileController := controllers.NewFileApiControllers(fileService)
 	server.RegisterController(fileController)

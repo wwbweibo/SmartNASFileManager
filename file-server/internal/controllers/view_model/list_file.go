@@ -5,10 +5,11 @@ type ListFileRequest struct {
 }
 
 type ListFileResponseItem struct {
-	Path string `json:"path"`
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Size int64  `json:"size"`
+	Path  string `json:"path"`
+	Name  string `json:"name"`
+	Type  string `json:"type"`
+	Size  int64  `json:"size"`
+	Group string `json:"group"`
 }
 
 type ListDirectoryResponse struct {

@@ -13,7 +13,7 @@ class FileServerApp extends StatelessWidget {
     return MaterialApp(
       title: 'File Server',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
         useMaterial3: true,
       ),
       home: const FileServerHomePage(),

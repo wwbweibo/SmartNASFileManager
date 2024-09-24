@@ -45,6 +45,10 @@ func (g *GinServer) Start(ctx context.Context) error {
 	return g.server.ListenAndServe()
 }
 
+func (g *GinServer) UseStatic(prefix, root string) {
+	g.engine.StaticFS(prefix, http.Dir(root))
+}
+
 func (g *GinServer) RegisterController(controllers ...Controller) {
 	g.controllers = append(g.controllers, controllers...)
 }
