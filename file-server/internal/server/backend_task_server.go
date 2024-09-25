@@ -1,6 +1,10 @@
 package server
 
-import "context"
+import (
+	"context"
+
+	"golang.org/x/sync/errgroup"
+)
 
 // BackendTaskServer used to tracking all the backend task registered to this server.
 type BackendTaskServer struct {
@@ -15,11 +19,14 @@ func NewBackendTaskServer() *BackendTaskServer {
 }
 
 func (b *BackendTaskServer) Start(ctx context.Context) error {
+	var errgroup errgroup.Group
 	// start a http server here
 	for _, task := range b.tasks {
-		task.Start(ctx)
+		errgroup.Go(func() error {
+			return task.Start(ctx)
+		})
 	}
-	return nil
+	return errgroup.Wait()
 }
 
 func (b *BackendTaskServer) RegisterTask(tasks ...BackendTask) {

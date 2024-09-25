@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:file_server_fe/common/env.dart';
@@ -10,6 +11,7 @@ import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:file_server_fe/entity/file.dart';
+import 'package:http/retry.dart';
 
 class FileExplorer extends StatefulWidget {
   const FileExplorer({Key? key});
@@ -29,20 +31,41 @@ class _FileExplorerState extends State<FileExplorer> {
       maxCrossAxisExtent: 150,
       // mainAxisSpacing: 4,
       // crossAxisSpacing: 4,
-      children: _buildGridTileList()
-    );
+      children: _buildGridTileList());
 
-  List<Widget> _buildGridTileList() =>
-      files.map(
+  List<Widget> _buildGridTileList() => files
+      .map(
         (file) => FileWidget(
           file: file,
           onFileClick: onFileClick,
         ),
-      ).toList();
+      )
+      .toList();
 
-  DirTreeWidget _buildDirTree() => DirTreeWidget(key: Key(currentSelectedPath), selectedPath: currentSelectedPath, onDirChange: onPathChanged);
-  
-  DirPathWidget _buildDirPath() => DirPathWidget(key: Key(currentSelectedPath), path: currentSelectedPath, onPathChange: onPathChanged);
+  DirTreeWidget _buildDirTree() => DirTreeWidget(
+      key: Key(currentSelectedPath),
+      selectedPath: currentSelectedPath,
+      onDirChange: onPathChanged);
+
+  DirPathWidget _buildDirPath() => DirPathWidget(
+      key: Key(currentSelectedPath),
+      path: currentSelectedPath,
+      onPathChange: onPathChanged);
+
+  SizedBox _buildTreeBox() {
+    double width = _isMobile()
+        ? 0
+        : (MediaQuery.of(context).size.width < 1000
+            ? 0
+            : MediaQuery.of(context).size.width * 0.2);
+    if (width == 0) {
+      return SizedBox.shrink();
+    }
+    return SizedBox(
+      width: width,
+      child: _buildDirTree(),
+    );
+  }
 
   @override
   void initState() {
@@ -54,21 +77,18 @@ class _FileExplorerState extends State<FileExplorer> {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        SizedBox(
-            width: 200,
-            child: _buildDirTree(),
-        ),
-        Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                height: 50,
-                child: _buildDirPath(),
-              ),
-              Expanded(child: _buildGrid())
-            ],
-        )
-        )
+        _buildTreeBox(),
+        Expanded(
+            child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 50,
+              child: _buildDirPath(),
+            ),
+            Expanded(child: _buildGrid())
+          ],
+        ))
       ],
     );
   }
@@ -81,9 +101,24 @@ class _FileExplorerState extends State<FileExplorer> {
         return List<File>.empty();
       }
       final List<dynamic> resp = json.decode(response.body);
-      return resp.map((e) => File(name: e['name'], path: e['path'], size: e['size'], type: e['type'], group: e['group'])).toList();
+      return resp
+          .map((e) => File(
+              name: e['name'],
+              path: e['path'],
+              size: e['size'],
+              type: e['type'],
+              group: e['group']))
+          .toList();
     } else {
       throw Exception('Failed to load file list');
+    }
+  }
+
+  bool _isMobile() {
+    try {
+      return Platform.isAndroid || Platform.isIOS;
+    } catch (e) {
+      return false;
     }
   }
 
@@ -107,16 +142,25 @@ class _FileExplorerState extends State<FileExplorer> {
       var initialIndex = 0;
       var index = 0;
       List<NetworkImage> images = [];
-      files
-        .where((item) => item.group == "image")
-        .forEach((item) {
-          if (item.path == file.path) {
-            initialIndex = index;
-          }
-          index = index + 1;
-          images.add(NetworkImage("${Env.baseUrl}/static${item.path}"));
-        });
-      MultiImageProvider multiImageProvider = MultiImageProvider(images.toList(), initialIndex: initialIndex);
+      // files
+      //   .where((item) => item.group == "image")
+      //   .forEach((item) {
+      //     if (item.path == file.path) {
+      //       initialIndex = index;
+      //     }
+      //     index = index + 1;
+      //     images.add(NetworkImage("${Env.baseUrl}/static${item.path}"));
+      //   });
+      // MultiImageProvider multiImageProvider = MultiImageProvider(images.toList(), initialIndex: initialIndex);
+      List<String> imageUrls = [];
+      files.where((item) => item.group == "image").forEach((item) {
+        if (item.path == file.path) {
+          initialIndex = index;
+        }
+        index = index + 1;
+        imageUrls.add("${Env.baseUrl}/static${item.path}");
+      });
+      LazyNetworkImageProvider multiImageProvider = LazyNetworkImageProvider(imageUrls, initialIndex: initialIndex);
       showImageViewerPager(context, multiImageProvider);
       // setState(() {
       //   this.imageProvider = multiImageProvider;
@@ -124,4 +168,20 @@ class _FileExplorerState extends State<FileExplorer> {
       // });
     }
   }
+}
+
+class LazyNetworkImageProvider extends EasyImageProvider {
+  final List<String> urls;
+  int initialIndex = 0;
+
+  LazyNetworkImageProvider(this.urls, {this.initialIndex = 0});
+
+  @override
+  ImageProvider<Object> imageBuilder(BuildContext context, int index) {
+    log("imageBuilder: $index");
+    return NetworkImage(urls[index]);
+  }
+
+  @override
+  int get imageCount => urls.length;
 }

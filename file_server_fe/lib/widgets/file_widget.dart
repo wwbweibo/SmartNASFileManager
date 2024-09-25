@@ -27,7 +27,7 @@ class _FileState extends State<FileWidget> {
                 if (widget.file.group == "dir") {
                   return const Icon(Icons.folder, size: 85,);
                 } else if (widget.file.group == "image") {
-                  return Image.network("${Env.baseUrl}/static${widget.file.path}", height: 85,); 
+                  return Image.network("${Env.baseUrl}/cache${widget.file.path}", height: 85,); 
                 } else {
                   return const Icon(Icons.file_open, size: 85);
                 }

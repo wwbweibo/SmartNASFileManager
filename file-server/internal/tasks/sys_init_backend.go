@@ -69,17 +69,23 @@ func (opts ScanOptions) fileInExtensions(file string) bool {
 }
 
 type SysInitBackendTask struct {
-	startTime time.Time
-	option    ScanOptions
-	repo      domainFile.IFileRepository
-	dlConfig  dl.Config
+	startTime            time.Time
+	option               ScanOptions
+	repo                 domainFile.IFileRepository
+	dlConfig             dl.Config
+	imageCompressionTask ImageCompressionTask
 }
 
-func NewSysInitBackendTask(option ScanOptions, repo domainFile.IFileRepository, dlConfig dl.Config) *SysInitBackendTask {
+func NewSysInitBackendTask(option ScanOptions,
+	repo domainFile.IFileRepository,
+	dlConfig dl.Config,
+	imageCompressionTask ImageCompressionTask,
+) *SysInitBackendTask {
 	return &SysInitBackendTask{
-		option:   option,
-		repo:     repo,
-		dlConfig: dlConfig,
+		option:               option,
+		repo:                 repo,
+		dlConfig:             dlConfig,
+		imageCompressionTask: imageCompressionTask,
 	}
 }
 
@@ -136,6 +142,9 @@ func (s *SysInitBackendTask) singleFileHandler(ctx context.Context, file string)
 	}()
 	// insert into database
 	wg.Wait()
+	if _file.Group == "image" {
+		s.imageCompressionTask.AddImage(_file)
+	}
 	err := s.repo.CreateOrUpdateFile(ctx, _file)
 	if err != nil {
 		log.Default().Printf("error inserting file %s: %v", file, err)

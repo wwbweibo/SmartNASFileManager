@@ -47,9 +47,11 @@ func initTaskServer(config Config,
 		OptionPlainPath(config.ScanOption.Path...).
 		OptionRegexPath(config.ScanOption.RegexPath...).
 		OptionExtensions(config.ScanOption.Extensions...)
+	imageCompressionTask := tasks.NewImageCompressionTask(config.NasRootPath)
 	// register tasks here
 	taskServer.RegisterTask(
-		tasks.NewSysInitBackendTask(fileScanOption, fileRepo, config.DLConfiguration),
+		imageCompressionTask,
+		tasks.NewSysInitBackendTask(fileScanOption, fileRepo, config.DLConfiguration, *imageCompressionTask),
 	)
 	return taskServer
 }
@@ -57,6 +59,7 @@ func initTaskServer(config Config,
 func initGinServer(config Config, fileRepository file.IFileRepository) *server.GinServer {
 	server := server.NewGinServer()
 	server.UseStatic("/static", config.NasRootPath)
+	server.UseStatic("/cache", ".cache")
 	fileService := biz.NewFilerService(fileRepository)
 	fileController := controllers.NewFileApiControllers(fileService)
 	server.RegisterController(fileController)
