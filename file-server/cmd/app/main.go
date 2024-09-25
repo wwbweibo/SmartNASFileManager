@@ -21,7 +21,7 @@ func main() {
 	config := &Config{}
 	config.Load("config/config.yaml")
 
-	dbconnection := utils.NewDbConnection()
+	dbconnection := utils.NewDbConnection(config.DBPath)
 	fileRepo := file.NewFileRepository(dbconnection)
 	taskServer := initTaskServer(*config, fileRepo)
 	ginServer := initGinServer(*config, fileRepo)
@@ -47,7 +47,7 @@ func initTaskServer(config Config,
 		OptionPlainPath(config.ScanOption.Path...).
 		OptionRegexPath(config.ScanOption.RegexPath...).
 		OptionExtensions(config.ScanOption.Extensions...)
-	imageCompressionTask := tasks.NewImageCompressionTask(config.NasRootPath)
+	imageCompressionTask := tasks.NewImageCompressionTask(config.NasRootPath, config.CachePath)
 	// register tasks here
 	taskServer.RegisterTask(
 		imageCompressionTask,
@@ -59,7 +59,7 @@ func initTaskServer(config Config,
 func initGinServer(config Config, fileRepository file.IFileRepository) *server.GinServer {
 	server := server.NewGinServer()
 	server.UseStatic("/static", config.NasRootPath)
-	server.UseStatic("/cache", ".cache")
+	server.UseStatic("/cache", config.CachePath)
 	fileService := biz.NewFilerService(fileRepository)
 	fileController := controllers.NewFileApiControllers(fileService)
 	server.RegisterController(fileController)

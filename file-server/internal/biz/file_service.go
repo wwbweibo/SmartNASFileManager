@@ -23,11 +23,13 @@ func (f *FilerService) ListDirectoryTree(ctx context.Context) (viewmodel.ListDir
 func (f *FilerService) ListFiles(ctx context.Context, path string) ([]viewmodel.ListFileResponseItem, error) {
 	dir := file.Root.Search(path)
 	if dir == nil {
+		fmt.Printf("list file in '%s' error, could not find directory\n", path)
 		return nil, nil
 	}
 	fmt.Printf("ListFiles: %s\n", path)
 	files, err := f.repo.ListFileByDirectory(ctx, path)
 	if err != nil {
+		fmt.Printf("list file in %s error: %v\n", path, err.Error())
 		return nil, err
 	}
 	var res []viewmodel.ListFileResponseItem

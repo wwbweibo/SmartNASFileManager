@@ -11,7 +11,6 @@ import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:file_server_fe/entity/file.dart';
-import 'package:http/retry.dart';
 
 class FileExplorer extends StatefulWidget {
   const FileExplorer({Key? key});
@@ -59,7 +58,7 @@ class _FileExplorerState extends State<FileExplorer> {
             ? 0
             : MediaQuery.of(context).size.width * 0.2);
     if (width == 0) {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
     return SizedBox(
       width: width,
@@ -95,7 +94,10 @@ class _FileExplorerState extends State<FileExplorer> {
 
   Future<List<File>> listFile(String path) async {
     final response =
-        await http.get(Uri.parse("${Env.baseUrl}$fileListUrl?path=$path"));
+        await http.post(Uri.parse("${Env.baseUrl}$fileListUrl"),
+         body: {
+          "path": path
+        });
     if (response.statusCode == 200) {
       if (response.body == "null") {
         return List<File>.empty();
@@ -126,8 +128,8 @@ class _FileExplorerState extends State<FileExplorer> {
     log("onPathChanged: $path");
     listFile(path).then((value) {
       setState(() {
-        this.files = value;
-        this.currentSelectedPath = path;
+        files = value;
+        currentSelectedPath = path;
         // this.treeWidget = _buildDirTree();
       });
     });
@@ -141,17 +143,6 @@ class _FileExplorerState extends State<FileExplorer> {
       // 弹出图片浏览
       var initialIndex = 0;
       var index = 0;
-      List<NetworkImage> images = [];
-      // files
-      //   .where((item) => item.group == "image")
-      //   .forEach((item) {
-      //     if (item.path == file.path) {
-      //       initialIndex = index;
-      //     }
-      //     index = index + 1;
-      //     images.add(NetworkImage("${Env.baseUrl}/static${item.path}"));
-      //   });
-      // MultiImageProvider multiImageProvider = MultiImageProvider(images.toList(), initialIndex: initialIndex);
       List<String> imageUrls = [];
       files.where((item) => item.group == "image").forEach((item) {
         if (item.path == file.path) {
@@ -162,16 +153,13 @@ class _FileExplorerState extends State<FileExplorer> {
       });
       LazyNetworkImageProvider multiImageProvider = LazyNetworkImageProvider(imageUrls, initialIndex: initialIndex);
       showImageViewerPager(context, multiImageProvider);
-      // setState(() {
-      //   this.imageProvider = multiImageProvider;
-      //   this.showImageViewer = true;
-      // });
     }
   }
 }
 
 class LazyNetworkImageProvider extends EasyImageProvider {
   final List<String> urls;
+  @override
   int initialIndex = 0;
 
   LazyNetworkImageProvider(this.urls, {this.initialIndex = 0});

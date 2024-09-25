@@ -20,6 +20,7 @@ func NewFileApiControllers(fileService *biz.FilerService) *FileApiControllers {
 func (f *FileApiControllers) InitRoute(r *gin.Engine) {
 	r.GET("/api/v1/dir", f.dirTree)
 	r.GET("/api/v1/file", f.listDir)
+	r.POST("/api/v1/file", f.listDir)
 }
 
 func (f *FileApiControllers) dirTree(c *gin.Context) {
@@ -33,7 +34,7 @@ func (f *FileApiControllers) dirTree(c *gin.Context) {
 
 func (f *FileApiControllers) listDir(c *gin.Context) {
 	req := viewmodel.ListFileRequest{}
-	if err := c.BindQuery(&req); err != nil {
+	if err := c.Bind(&req); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}

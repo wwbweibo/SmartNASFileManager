@@ -57,7 +57,9 @@ func (node *DirNode) searchNode(path string) *DirNode {
 		n := nodes[0]
 		nodes = nodes[1:]
 		fmt.Printf("searching %s\n", n.Path)
+		fmt.Printf("'%s' == '%s' = %v\n", n.Path, path, n.Path == path)
 		if n.Path == path {
+			fmt.Printf("found %s\n", n.Path)
 			return n
 		}
 		if len(n.Children) > 0 {

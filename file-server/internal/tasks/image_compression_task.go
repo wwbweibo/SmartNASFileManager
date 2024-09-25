@@ -18,12 +18,13 @@ type ImageCompressionTask struct {
 	cacheDir    string
 	startAt     time.Time
 	nasRootPath string
+	cachePath   string
 }
 
-func NewImageCompressionTask(nasRootPath string) *ImageCompressionTask {
+func NewImageCompressionTask(nasRootPath, cachePath string) *ImageCompressionTask {
 	return &ImageCompressionTask{
 		imageChan:   make(chan file.File),
-		cacheDir:    ".cache",
+		cacheDir:    cachePath,
 		nasRootPath: nasRootPath,
 	}
 }

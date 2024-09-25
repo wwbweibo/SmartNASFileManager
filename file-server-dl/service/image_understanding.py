@@ -1,4 +1,5 @@
 import torch
+import torch_directml
 import cn_clip.clip as clip
 from cn_clip.clip import load_from_name
 from lavis.models import load_model_and_preprocess
@@ -7,7 +8,7 @@ from PIL import Image
 
 class ImageUnderstanding:
     def __init__(self):
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = torch_directml.device()
         self.clip_model = None
         self.clip_preprocess = None
         self.text_labels = None

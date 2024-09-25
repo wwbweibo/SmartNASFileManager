@@ -2,6 +2,8 @@ nas_root_path: /Users/weibo/code/myself/anfm/tests
 scan_option: 
   extensions: 
   - "jpg"
+db_path: data/sqlite.db
+cache_path: data/cache
 dl_configuration:
   scheme: http
   host: localhost
