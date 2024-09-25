@@ -107,6 +107,7 @@ func (s *SysInitBackendTask) Start(ctx context.Context) error {
 			break
 		default:
 			if s.option.fileInPath(file) || s.option.fileInRegexPath(file) || s.option.fileInExtensions(file) {
+				domainFile.Root.Add(utils.GetDirectory(strings.ReplaceAll(file, s.option.RootPath, "")))
 				s.singleFileHandler(ctx, file)
 			}
 		}
