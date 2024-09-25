@@ -1,6 +1,7 @@
 package file
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -37,10 +38,12 @@ func (node *DirNode) append(section []string) {
 			return
 		}
 	}
-	node.Children = append(node.Children, &DirNode{
+	_node := &DirNode{
 		Name: section[0],
 		Path: node.Path + section[0] + "/",
-	})
+	}
+	_node.append(section[1:])
+	node.Children = append(node.Children, _node)
 }
 
 func (node *DirNode) Search(path string) *DirNode {
@@ -49,13 +52,16 @@ func (node *DirNode) Search(path string) *DirNode {
 
 func (node *DirNode) searchNode(path string) *DirNode {
 	// 做一个 dfs 去搜索所有节点找到对应的节点
-	if node.Path == path {
-		return node
-	}
-	for _, n := range node.Children {
-		node := n.searchNode(path)
-		if node != nil {
-			return node
+	nodes := []*DirNode{node}
+	for len(nodes) > 0 {
+		n := nodes[0]
+		nodes = nodes[1:]
+		fmt.Printf("searching %s\n", n.Path)
+		if n.Path == path {
+			return n
+		}
+		if len(n.Children) > 0 {
+			nodes = append(nodes, n.Children...)
 		}
 	}
 	return nil
