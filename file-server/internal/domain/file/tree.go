@@ -28,6 +28,9 @@ func (node *DirNode) append(section []string) {
 	if len(section) == 0 {
 		return
 	}
+	if len(section) == 1 && section[0] == "" {
+		return
+	}
 	for _, n := range node.Children {
 		if n.Name == section[0] {
 			n.append(section[1:])
