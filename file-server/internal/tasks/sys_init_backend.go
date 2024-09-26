@@ -107,9 +107,11 @@ func (s *SysInitBackendTask) Start(ctx context.Context) error {
 		case <-ctx.Done():
 			break
 		default:
-			if s.option.fileInPath(file) || s.option.fileInRegexPath(file) || s.option.fileInExtensions(file) {
-				domainFile.Root.Add(utils.GetDirectory(strings.ReplaceAll(file, s.option.RootPath, "")))
-				s.singleFileHandler(ctx, file)
+			if s.option.fileInPath(file) || s.option.fileInRegexPath(file) {
+				if s.option.fileInExtensions(file) {
+					domainFile.Root.Add(utils.GetDirectory(strings.ReplaceAll(file, s.option.RootPath, "")))
+					s.singleFileHandler(ctx, file)
+				}
 			}
 		}
 	}
@@ -124,14 +126,19 @@ func (s *SysInitBackendTask) singleFileHandler(ctx context.Context, file string)
 	log.Default().Printf("handling file %s", file)
 	file = strings.Replace(file, s.option.RootPath, "", 1)
 	_file := domainFile.NewFile(file)
-	_file.Checksum = utils.Sha256(s.option.RootPath + file)
+	_file.Size, _file.UpdatedAt = utils.GetFileSize(s.option.RootPath + file)
 	dbFile, _ := s.repo.GetFileByPath(ctx, file)
-	if dbFile.Checksum == _file.Checksum {
-		if !(dbFile.Group == "unknown" || dbFile.Group == "") {
-			fmt.Printf("file %s has not changed\n", file)
-			return
+	if dbFile.UpdatedAt.Before(_file.UpdatedAt) {
+		// 记录的文件更新时间早于当前文件的更新时间
+		_file.Checksum = utils.Sha256(s.option.RootPath + file)
+		if dbFile.Checksum == _file.Checksum {
+			if !(dbFile.Group == "unknown" || dbFile.Group == "") {
+				fmt.Printf("file %s has not changed\n", file)
+				return
+			}
 		}
 	}
+
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	go func() {
@@ -145,11 +152,7 @@ func (s *SysInitBackendTask) singleFileHandler(ctx context.Context, file string)
 		}
 		_file.SetFileTypeFromUnderstanding(result)
 	}()
-	go func() {
-		defer wg.Done()
-		// _file.Checksum = utils.Sha256(s.option.RootPath + file)
-		_file.Size = utils.GetFileSize(s.option.RootPath + file)
-	}()
+
 	// insert into database
 	wg.Wait()
 	if _file.Group == "image" {

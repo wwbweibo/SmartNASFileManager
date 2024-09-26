@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"time"
 )
 
 func WalkDir(dir string) []string {
@@ -82,7 +83,7 @@ func Sha256(path string) string {
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
-func GetFileSize(path string) int64 {
+func GetFileSize(path string) (int64, time.Time) {
 	file, err := os.Open(path)
 	if err != nil {
 		log.Default().Fatalf("error opening file %s: %v", path, err)
@@ -93,7 +94,7 @@ func GetFileSize(path string) int64 {
 	if err != nil {
 		log.Default().Fatalf("error getting file stat for file %s: %v", path, err)
 	}
-	return stat.Size()
+	return stat.Size(), stat.ModTime()
 }
 
 func CheckIsDir(path string) bool {
