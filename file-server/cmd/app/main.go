@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fileserver/internal"
 	"fileserver/internal/biz"
 	"fileserver/internal/controllers"
 	"fileserver/internal/domain/file"
@@ -18,7 +19,7 @@ import (
 func main() {
 	ctx, cancelF := context.WithCancel(context.Background())
 	defer cancelF()
-	config := &Config{}
+	config := internal.GetConfig()
 	config.Load("config/config.yaml")
 
 	dbconnection := utils.NewDbConnection(config.DBPath)
@@ -37,7 +38,7 @@ func main() {
 	}
 }
 
-func initTaskServer(config Config,
+func initTaskServer(config internal.Config,
 	fileRepo domainFile.IFileRepository,
 ) *server.BackendTaskServer {
 	taskServer := server.NewBackendTaskServer()
@@ -56,7 +57,7 @@ func initTaskServer(config Config,
 	return taskServer
 }
 
-func initGinServer(config Config, fileRepository file.IFileRepository) *server.GinServer {
+func initGinServer(config internal.Config, fileRepository file.IFileRepository) *server.GinServer {
 	server := server.NewGinServer()
 	server.UseStatic("/static", config.NasRootPath)
 	server.UseStatic("/cache", config.CachePath)

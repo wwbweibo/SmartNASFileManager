@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"encoding/json"
@@ -8,6 +8,8 @@ import (
 
 	"gopkg.in/yaml.v2"
 )
+
+var config = &Config{}
 
 type Config struct {
 	// StartWithBackendScan is a flag to start with backend scan, if true, the program will start with backend scan
@@ -57,4 +59,8 @@ func (c *Config) loadYAML(path string) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func GetConfig() *Config {
+	return config
 }

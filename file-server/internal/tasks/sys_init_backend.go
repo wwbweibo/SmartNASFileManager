@@ -5,6 +5,7 @@ import (
 	"fileserver/internal/adapters/dl"
 	domainFile "fileserver/internal/domain/file"
 	"fileserver/utils"
+	"fmt"
 	"log"
 	"regexp"
 	"strings"
@@ -123,6 +124,14 @@ func (s *SysInitBackendTask) singleFileHandler(ctx context.Context, file string)
 	log.Default().Printf("handling file %s", file)
 	file = strings.Replace(file, s.option.RootPath, "", 1)
 	_file := domainFile.NewFile(file)
+	_file.Checksum = utils.Sha256(s.option.RootPath + file)
+	dbFile, _ := s.repo.GetFileByPath(ctx, file)
+	if dbFile.Checksum == _file.Checksum {
+		if !(dbFile.Group == "unknown" || dbFile.Group == "") {
+			fmt.Printf("file %s has not changed\n", file)
+			return
+		}
+	}
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	go func() {
@@ -138,7 +147,7 @@ func (s *SysInitBackendTask) singleFileHandler(ctx context.Context, file string)
 	}()
 	go func() {
 		defer wg.Done()
-		_file.Checksum = utils.Sha256(s.option.RootPath + file)
+		// _file.Checksum = utils.Sha256(s.option.RootPath + file)
 		_file.Size = utils.GetFileSize(s.option.RootPath + file)
 	}()
 	// insert into database

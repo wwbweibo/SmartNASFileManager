@@ -8,6 +8,7 @@ import (
 
 type IFileRepository interface {
 	ListFileByDirectory(ctx context.Context, directory string) ([]File, error)
+	GetFileByPath(ctx context.Context, path string) (File, error)
 	CreateOrUpdateFile(ctx context.Context, file File) (err error)
 	ListDirectory(ctx context.Context) ([]string, error)
 }
@@ -37,6 +38,15 @@ func (r *FileRepository) ListDirectory(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 	return dirs, nil
+}
+
+func (r *FileRepository) GetFileByPath(ctx context.Context, path string) (File, error) {
+	var file File
+	err := r.db.Where("path = ?", path).First(&file).Error
+	if err != nil {
+		return File{}, err
+	}
+	return file, nil
 }
 
 func (r *FileRepository) ListFileByDirectory(ctx context.Context, directory string) ([]File, error) {

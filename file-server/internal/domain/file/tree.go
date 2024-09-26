@@ -1,7 +1,10 @@
 package file
 
 import (
+	"encoding/json"
+	"fileserver/internal"
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -44,6 +47,7 @@ func (node *DirNode) append(section []string) {
 	}
 	_node.append(section[1:])
 	node.Children = append(node.Children, _node)
+	saveTree()
 }
 
 func (node *DirNode) Search(path string) *DirNode {
@@ -67,4 +71,26 @@ func (node *DirNode) searchNode(path string) *DirNode {
 		}
 	}
 	return nil
+}
+
+func loadTree() {
+	// read file content
+	bts, err := os.ReadFile(internal.GetConfig().CachePath + "/tree.json")
+	if err != nil {
+		panic(err)
+	}
+	// unmarshal json
+	err = json.Unmarshal(bts, Root)
+}
+
+func saveTree() {
+	// save tree to file
+	bts, err := json.Marshal(Root)
+	if err != nil {
+		panic(err)
+	}
+	err = os.WriteFile(internal.GetConfig().CachePath+"/tree.json", bts, 0644)
+	if err != nil {
+		panic(err)
+	}
 }
