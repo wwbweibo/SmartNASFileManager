@@ -141,20 +141,20 @@ class _FileExplorerState extends State<FileExplorer> {
       var initialIndex = 0;
       var index = 0;
       List<String> imageUrls = [];
+      List<String> prunedImageUrls = [];
+      List<File> imageFiles = [];
       files.where((item) => item.group == "image").forEach((item) {
         if (item.path == file.path) {
           initialIndex = index;
         }
         index = index + 1;
         imageUrls.add("${Env.baseUrl}/static${item.path}");
+        prunedImageUrls.add(item.path);
+        imageFiles.add(item);
       });
       Navigator.of(context).push(MaterialPageRoute(
           builder: (context) => ImageViewer(
-              files
-                  .where((item) => item.group == "image")
-                  .map((item) => item.path)
-                  .toList(),
-              selectedIndex: initialIndex)));
+              images: imageFiles, selectedIndex: initialIndex)));
       // LazyNetworkImageProvider multiImageProvider =
       //     LazyNetworkImageProvider(imageUrls, initialIndex: initialIndex);
       // showImageViewerPager(context, multiImageProvider);

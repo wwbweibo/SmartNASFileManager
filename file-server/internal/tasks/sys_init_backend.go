@@ -140,7 +140,7 @@ func (s *SysInitBackendTask) singleFileHandler(ctx context.Context, file string)
 	}
 
 	wg := sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		result, err := dl.NewClient(s.dlConfig).Understanding(ctx, dl.UnderstandingRequest{
