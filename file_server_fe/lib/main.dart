@@ -1,7 +1,12 @@
+import 'package:file_server_fe/common/env.dart';
+import 'package:file_server_fe/pages/setting.dart';
 import 'package:flutter/material.dart';
 import 'package:file_server_fe/pages/file_explorer.dart';
+import 'package:localstorage/localstorage.dart';
 
 void main() {
+      initLocalStorage();
+
   runApp(const FileServerApp());
 }
 
@@ -18,7 +23,7 @@ class FileServerApp extends StatelessWidget {
       ),
       home: const FileServerHomePage(),
     );
-  } 
+  }
 }
 
 class FileServerHomePage extends StatefulWidget {
@@ -31,9 +36,11 @@ class FileServerHomePage extends StatefulWidget {
 
 class _FileServerHomePageState extends State<FileServerHomePage> {
   int _selectedIndex = 0;
-  static const TextStyle optionStyle = TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
+  static const TextStyle optionStyle =
+      TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
   static const List<Widget> _widgetOptions = <Widget>[
     FileExplorer(),
+    Setting(),
     Text(
       'Index 1: Files',
       style: optionStyle,
@@ -48,6 +55,12 @@ class _FileServerHomePageState extends State<FileServerHomePage> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  @override
+  void initState() {
+    Env.load();
+    super.initState();
   }
 
   @override
@@ -74,14 +87,22 @@ class _FileServerHomePageState extends State<FileServerHomePage> {
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: Text('File Server')
-            ),
+                decoration: BoxDecoration(color: Colors.blue),
+                child: Text('File Server')),
             ListTile(
               title: const Text('文件浏览器'),
               selected: _selectedIndex == 0,
               onTap: () {
-                  Navigator.pop(context);
+                _onItemTapped(0);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('设置'),
+              selected: _selectedIndex == 1,
+              onTap: () {
+                _onItemTapped(1);
+                Navigator.pop(context);
               },
             ),
           ],

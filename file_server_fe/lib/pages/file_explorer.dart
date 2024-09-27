@@ -1,11 +1,11 @@
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:file_server_fe/common/env.dart';
 import 'package:file_server_fe/widgets/dir_path_widget.dart';
 import 'package:file_server_fe/widgets/dir_tree_widget.dart';
 import 'package:file_server_fe/widgets/file_widget.dart';
+import 'package:file_server_fe/pages/image_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
@@ -24,7 +24,7 @@ class _FileExplorerState extends State<FileExplorer> {
   List<File> files = [];
   String currentSelectedPath = "/";
   bool showImageViewer = false;
-  late MultiImageProvider imageProvider;
+  // late MultiImageProvider imageProvider;
 
   Widget _buildGrid() => GridView.extent(
       maxCrossAxisExtent: 150,
@@ -93,11 +93,8 @@ class _FileExplorerState extends State<FileExplorer> {
   }
 
   Future<List<File>> listFile(String path) async {
-    final response =
-        await http.post(Uri.parse("${Env.baseUrl}$fileListUrl"),
-         body: {
-          "path": path
-        });
+    final response = await http
+        .post(Uri.parse("${Env.baseUrl}$fileListUrl"), body: {"path": path});
     if (response.statusCode == 200) {
       if (response.body == "null") {
         return List<File>.empty();
@@ -151,25 +148,33 @@ class _FileExplorerState extends State<FileExplorer> {
         index = index + 1;
         imageUrls.add("${Env.baseUrl}/static${item.path}");
       });
-      LazyNetworkImageProvider multiImageProvider = LazyNetworkImageProvider(imageUrls, initialIndex: initialIndex);
-      showImageViewerPager(context, multiImageProvider);
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => ImageViewer(
+              files
+                  .where((item) => item.group == "image")
+                  .map((item) => item.path)
+                  .toList(),
+              selectedIndex: initialIndex)));
+      // LazyNetworkImageProvider multiImageProvider =
+      //     LazyNetworkImageProvider(imageUrls, initialIndex: initialIndex);
+      // showImageViewerPager(context, multiImageProvider);
     }
   }
 }
 
-class LazyNetworkImageProvider extends EasyImageProvider {
-  final List<String> urls;
-  @override
-  int initialIndex = 0;
+// class LazyNetworkImageProvider extends EasyImageProvider {
+//   final List<String> urls;
+//   @override
+//   int initialIndex = 0;
 
-  LazyNetworkImageProvider(this.urls, {this.initialIndex = 0});
+//   LazyNetworkImageProvider(this.urls, {this.initialIndex = 0});
 
-  @override
-  ImageProvider<Object> imageBuilder(BuildContext context, int index) {
-    log("imageBuilder: $index");
-    return NetworkImage(urls[index]);
-  }
+//   @override
+//   ImageProvider<Object> imageBuilder(BuildContext context, int index) {
+//     log("imageBuilder: $index");
+//     return NetworkImage(urls[index]);
+//   }
 
-  @override
-  int get imageCount => urls.length;
-}
+//   @override
+//   int get imageCount => urls.length;
+// }

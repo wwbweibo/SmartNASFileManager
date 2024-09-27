@@ -39,6 +39,8 @@ dependencies:
   flutter_fancy_tree_view: ^1.6.0
   event_bus: ^2.0.0
   easy_image_viewer: ^1.5.1
+  photo_view: ^0.15.0
+  localstorage: ^5.0.0
 
 dev_dependencies:
   flutter_test:
