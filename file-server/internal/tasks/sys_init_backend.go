@@ -128,14 +128,17 @@ func (s *SysInitBackendTask) singleFileHandler(ctx context.Context, file string)
 	_file := domainFile.NewFile(file)
 	_file.Size, _file.UpdatedAt = utils.GetFileSize(s.option.RootPath + file)
 	dbFile, _ := s.repo.GetFileByPath(ctx, file)
-	if dbFile.UpdatedAt.Before(_file.UpdatedAt) {
-		// 记录的文件更新时间早于当前文件的更新时间
-		_file.Checksum = utils.Sha256(s.option.RootPath + file)
-		if dbFile.Checksum == _file.Checksum {
-			if !(dbFile.Group == "unknown" || dbFile.Group == "") {
-				fmt.Printf("file %s has not changed\n", file)
-				return
-			}
+	if dbFile.UpdatedAt.Equal(_file.UpdatedAt) || dbFile.UpdatedAt.After(_file.UpdatedAt) {
+		// 记录的文件更新时间等于或晚于当前文件的更新时间
+		// 说明文件没有更新
+		return
+	}
+	// 记录的文件更新时间早于当前文件的更新时间
+	_file.Checksum = utils.Sha256(s.option.RootPath + file)
+	if dbFile.Checksum == _file.Checksum {
+		if !(dbFile.Group == "unknown" || dbFile.Group == "") {
+			fmt.Printf("file %s has not changed\n", file)
+			return
 		}
 	}
 

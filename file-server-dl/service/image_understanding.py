@@ -1,14 +1,18 @@
 import torch
-import torch_directml
 import cn_clip.clip as clip
 from cn_clip.clip import load_from_name
 from lavis.models import load_model_and_preprocess
 from models.image import ImageUnderstandingResult, ImageLabel
 from PIL import Image
+import importlib.util as importutil
 
 class ImageUnderstanding:
     def __init__(self):
-        self.device = torch_directml.device()
+        # check if torch_directml is available
+        if importutil.find_spec("torch_directml") is None:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = torch_directml.device()
         self.clip_model = None
         self.clip_preprocess = None
         self.text_labels = None
