@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:file_server_fe/common/env.dart';
+import 'package:file_server_fe/pages/video_player.dart';
 import 'package:file_server_fe/widgets/dir_path_widget.dart';
 import 'package:file_server_fe/widgets/dir_tree_widget.dart';
 import 'package:file_server_fe/widgets/file_widget.dart';
@@ -137,12 +138,12 @@ class _FileExplorerState extends State<FileExplorer> {
     });
   }
 
-  onFileClick(File file) {
-    if (file.group == "dir") {
+  void _fileClickChangePathFunc(File file) {
       onPathChanged(file.path);
-    }
-    if (file.group == "image") {
-      // 弹出图片浏览
+  }
+
+  void _fileClickShowImageViewerFunc(File file) {
+    // 弹出图片浏览
       var initialIndex = 0;
       var index = 0;
       List<String> imageUrls = [];
@@ -160,9 +161,25 @@ class _FileExplorerState extends State<FileExplorer> {
       Navigator.of(context).push(MaterialPageRoute(
           builder: (context) =>
               ImageViewer(images: imageFiles, selectedIndex: initialIndex)));
-      // LazyNetworkImageProvider multiImageProvider =
-      //     LazyNetworkImageProvider(imageUrls, initialIndex: initialIndex);
-      // showImageViewerPager(context, multiImageProvider);
+  }
+
+  void _fileClickPlayVideoFunc(File file) {
+    // 弹出视频播放
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => 
+        VideoPlayerPage(file: file)));
+  }
+
+  onFileClick(File file) {
+    if (file.group == "dir") {
+      _fileClickChangePathFunc(file);
+    }
+    if (file.group == "image") {
+      _fileClickShowImageViewerFunc(file);
+
+    }
+    if (file.group == "video") {
+      _fileClickPlayVideoFunc(file);
     }
   }
 }
