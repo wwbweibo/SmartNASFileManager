@@ -126,6 +126,9 @@ class _ImageViewerState extends State<ImageViewer> {
             imagePositionY = 0;
           })
         },
+        onTap: () => {
+          Navigator.of(context).pop()
+        },
         child: SizedBox(
           height: MediaQuery.of(context).size.height - 150,
           width: MediaQuery.of(context).size.width,

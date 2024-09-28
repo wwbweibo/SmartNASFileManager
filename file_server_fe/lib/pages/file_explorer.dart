@@ -7,10 +7,9 @@ import 'package:file_server_fe/widgets/dir_tree_widget.dart';
 import 'package:file_server_fe/widgets/file_widget.dart';
 import 'package:file_server_fe/pages/image_viewer.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:file_server_fe/entity/file.dart';
+import 'package:http/http.dart' as http;
 
 class FileExplorer extends StatefulWidget {
   const FileExplorer({Key? key});
@@ -93,13 +92,19 @@ class _FileExplorerState extends State<FileExplorer> {
   }
 
   Future<List<File>> listFile(String path) async {
-    final response = await http
-        .post(Uri.parse("${Env.baseUrl}$fileListUrl"), body: {"path": path});
+    final response = await http.post(
+      Uri.parse("${Env.baseUrl}$fileListUrl"),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: json.encode({"path": path}),
+    );
     if (response.statusCode == 200) {
-      if (response.body == "null") {
+      var respText = response.body;
+      if (respText == "null") {
         return List<File>.empty();
       }
-      final List<dynamic> resp = json.decode(response.body);
+      final List<dynamic> resp = json.decode(respText);
       return resp
           .map((e) => File(
               name: e['name'],
@@ -153,8 +158,8 @@ class _FileExplorerState extends State<FileExplorer> {
         imageFiles.add(item);
       });
       Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => ImageViewer(
-              images: imageFiles, selectedIndex: initialIndex)));
+          builder: (context) =>
+              ImageViewer(images: imageFiles, selectedIndex: initialIndex)));
       // LazyNetworkImageProvider multiImageProvider =
       //     LazyNetworkImageProvider(imageUrls, initialIndex: initialIndex);
       // showImageViewerPager(context, multiImageProvider);

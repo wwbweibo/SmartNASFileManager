@@ -61,8 +61,8 @@ func (r *FileRepository) ListFileByDirectory(ctx context.Context, directory stri
 
 func (r *FileRepository) CreateOrUpdateFile(ctx context.Context, file File) (err error) {
 	return r.db.Exec(`insert into files 
-	(path, directory, extension, type, "group", description, tags, caption, checksum, name, size ) values 
-	(?,?,?,?,?,?,?,?,?, ?, ?) on conflict(path) do update set directory = ?, extension = ?, type = ?, "group"=?, description=? , tags = ?,  caption = ?, checksum = ?, name=?, size=?;`,
-		file.Path, file.Directory, file.Extension, file.Type, file.Group, file.Description, file.Tags, file.Caption, file.Checksum, file.Name, file.Size,
-		file.Directory, file.Extension, file.Type, file.Group, file.Description, file.Tags, file.Caption, file.Checksum, file.Name, file.Size).Error
+	(created_at, updated_at, path, directory, extension, type, "group", description, tags, caption, checksum, name, size ) values 
+	(?,?,?,?,?,?,?,?,?,?,?, ?, ?) on conflict(path) do update set created_at = ?, updated_at = ?, directory = ?, extension = ?, type = ?, "group"=?, description=? , tags = ?,  caption = ?, checksum = ?, name=?, size=?;`,
+		file.CreatedAt, file.UpdatedAt, file.Path, file.Directory, file.Extension, file.Type, file.Group, file.Description, file.Tags, file.Caption, file.Checksum, file.Name, file.Size,
+		file.CreatedAt, file.UpdatedAt, file.Directory, file.Extension, file.Type, file.Group, file.Description, file.Tags, file.Caption, file.Checksum, file.Name, file.Size).Error
 }

@@ -20,7 +20,8 @@ func WalkDir(dir string) []string {
 			log.Default().Printf("dir %s does not exist", dir)
 			return []string{}
 		} else {
-			log.Default().Fatalf("error reading dir %s: %v", dir, err)
+			log.Default().Printf("error reading dir %s: %v", dir, err)
+			return []string{}
 		}
 	}
 	// check if the dir is a dir
@@ -71,13 +72,15 @@ func GetExtension(f string) string {
 func Sha256(path string) string {
 	file, err := os.Open(path)
 	if err != nil {
-		log.Default().Fatalf("error opening file %s: %v", path, err)
+		log.Default().Printf("error opening file %s: %v", path, err)
+		return ""
 	}
 	defer file.Close()
 
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {
-		log.Default().Fatalf("error calculating SHA256 for file %s: %v", path, err)
+		log.Default().Printf("error calculating SHA256 for file %s: %v", path, err)
+		return ""
 	}
 
 	return hex.EncodeToString(hash.Sum(nil))
@@ -86,13 +89,15 @@ func Sha256(path string) string {
 func GetFileSize(path string) (int64, time.Time) {
 	file, err := os.Open(path)
 	if err != nil {
-		log.Default().Fatalf("error opening file %s: %v", path, err)
+		log.Default().Printf("error opening file %s: %v", path, err)
+		return 0, time.Time{}
 	}
 	defer file.Close()
 
 	stat, err := file.Stat()
 	if err != nil {
-		log.Default().Fatalf("error getting file stat for file %s: %v", path, err)
+		log.Default().Printf("error getting file stat for file %s: %v", path, err)
+		return 0, time.Time{}
 	}
 	return stat.Size(), stat.ModTime()
 }

@@ -3,10 +3,13 @@ package file
 import (
 	"encoding/json"
 	"fileserver/internal"
-	"fmt"
 	"os"
 	"strings"
 )
+
+func init() {
+	loadTree()
+}
 
 var Root = &DirNode{
 	Name:     "/",
@@ -60,10 +63,7 @@ func (node *DirNode) searchNode(path string) *DirNode {
 	for len(nodes) > 0 {
 		n := nodes[0]
 		nodes = nodes[1:]
-		fmt.Printf("searching %s\n", n.Path)
-		fmt.Printf("'%s' == '%s' = %v\n", n.Path, path, n.Path == path)
 		if n.Path == path {
-			fmt.Printf("found %s\n", n.Path)
 			return n
 		}
 		if len(n.Children) > 0 {
@@ -77,6 +77,9 @@ func loadTree() {
 	// read file content
 	bts, err := os.ReadFile(internal.GetConfig().CachePath + "/tree.json")
 	if err != nil {
+		if os.IsNotExist(err) { 
+			return
+		}
 		panic(err)
 	}
 	// unmarshal json

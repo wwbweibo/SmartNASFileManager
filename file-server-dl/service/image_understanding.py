@@ -1,3 +1,4 @@
+import logging
 import torch
 import cn_clip.clip as clip
 from cn_clip.clip import load_from_name
@@ -5,6 +6,7 @@ from lavis.models import load_model_and_preprocess
 from models.image import ImageUnderstandingResult, ImageLabel
 from PIL import Image
 import importlib.util as importutil
+import numpy as np
 
 class ImageUnderstanding:
     def __init__(self):
@@ -12,6 +14,7 @@ class ImageUnderstanding:
         if importutil.find_spec("torch_directml") is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
+            import torch_directml
             self.device = torch_directml.device()
         self.clip_model = None
         self.clip_preprocess = None
@@ -43,7 +46,11 @@ class ImageUnderstanding:
     def label_image(self, path: str) -> list[ImageLabel]:
         if self.clip_model is None:
             self.__init_clip_model__()
-        image = self.clip_preprocess(Image.open(path)).unsqueeze(0).to(self.device)
+        pil_image = Image.open(path)
+        # 检查图像通道，如果为4通道，去掉alpha通道
+        if pil_image.mode == "RGBA":
+            pil_image = pil_image.convert("RGB")
+        image = self.clip_preprocess(pil_image).unsqueeze(0).to(self.device)
         with torch.no_grad():
             image_features = self.clip_model.encode_image(image)
             image_features /= image_features.norm(dim=-1, keepdim=True)
@@ -59,10 +66,15 @@ class ImageUnderstanding:
     def caption_image(self, path: str) -> str:
         if self.caption_model is None:
             self.__init_caption_model__()
-        image = Image.open(path)
-        return self.caption_model.generate({"image": self.caption_vis_processors['eval'](image).unsqueeze(0).to(self.device)})[0]
+        pil_image = Image.open(path)
+        # 检查图像通道，如果为4通道，去掉alpha通道
+        if pil_image.mode == "RGBA":
+            pil_image = pil_image.convert("RGB")
+        return self.caption_model.generate({"image": self.caption_vis_processors['eval'](pil_image).unsqueeze(0).to(self.device)})[0]
 
     def understand(self, path: str) -> ImageUnderstandingResult:
         labels = self.label_image(path)
+        logging.info("Image Labels: %s", labels)
         caption = self.caption_image(path)
+        logging.info("Image Caption: %s", caption)
         return ImageUnderstandingResult(labels, caption)

@@ -13,6 +13,7 @@ class FileUnderstanding:
     def understand(self, path: str) -> FileUnderstandingResult:
         result = self.magika.identify_path(Path(self.config['nas_root_path']  + path))
         file_understanding = FileUnderstandingResult(result.output.ct_label, result.output.group, result.output.description)
+        logging.info("File Understanding: %s", file_understanding)
         if file_understanding.group == 'image':
             file_understanding.set_ext(self.image_understanding.understand( self.config['nas_root_path'] + path))
         logging.info("File Understanding Result: %s", file_understanding)
