@@ -87,7 +87,8 @@ class _VideoPlayerState extends State<VideoPlayerPage> {
     return Container(
       color: Color.fromARGB(50, 228, 239, 247),
       child:  Column(children: [
-      Row(children: [
+      Row(
+        children: [
         SizedBox(
             width: MediaQuery.of(context).size.width - 200,
             child: SfSlider(

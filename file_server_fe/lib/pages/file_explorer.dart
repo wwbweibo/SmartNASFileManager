@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:file_server_fe/common/env.dart';
+import 'package:file_server_fe/pages/media_player.dart';
 import 'package:file_server_fe/pages/video_player.dart';
 import 'package:file_server_fe/widgets/dir_path_widget.dart';
 import 'package:file_server_fe/widgets/dir_tree_widget.dart';
@@ -163,6 +164,24 @@ class _FileExplorerState extends State<FileExplorer> {
               ImageViewer(images: imageFiles, selectedIndex: initialIndex)));
   }
 
+  void _fileClickShowMediaViewerFunc(File file) {
+    // 弹出图片浏览
+      var initialIndex = 0;
+      var index = 0;
+      var mediaFiles = files
+        .where((item) => item.group == "image"||item.group == "video").toList();
+      mediaFiles.sort((a, b) => a.path.compareTo(b.path));
+      for (var item in mediaFiles) {
+        if (item.path == file.path) {
+          initialIndex = index;
+        }
+        index = index + 1;
+      }
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) =>
+              MediaPlayerPage(files: mediaFiles, selectedIndex: initialIndex)));
+  }
+
   void _fileClickPlayVideoFunc(File file) {
     // 弹出视频播放
     Navigator.of(context).push(MaterialPageRoute(
@@ -174,13 +193,18 @@ class _FileExplorerState extends State<FileExplorer> {
     if (file.group == "dir") {
       _fileClickChangePathFunc(file);
     }
-    if (file.group == "image") {
-      _fileClickShowImageViewerFunc(file);
+    if (file.group == "image" || file.group == "video") {
+      // 下载文件
+      // _fileClickDownloadFunc(file);
+      _fileClickShowMediaViewerFunc(file);
+    }
+    // if (file.group == "image") {
+    //   _fileClickShowImageViewerFunc(file);
 
-    }
-    if (file.group == "video") {
-      _fileClickPlayVideoFunc(file);
-    }
+    // }
+    // if (file.group == "video") {
+    //   _fileClickPlayVideoFunc(file);
+    // }
   }
 }
 
