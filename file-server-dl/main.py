@@ -27,6 +27,18 @@ def FileTypeInterfer():
         logging.error("Error: %s", e)
         return {"error": str(e)}
 
+@app.route('/api/v1/image/similar', methods=['POST'])
+def ImageSimilar():
+    data = request.get_json()
+    logging.info("Image Similar Request: %s", data['path'])
+    try:
+        result = fileUnderstanding.similar(data['path'])
+        return result.to_dict()
+    except Exception as e:
+        logging.error("Error: %s", e)
+        return {"error": str(e)}
+
+
 if __name__ == "__main__":
     # start an  http server here
     app.run(host='0.0.0.0', port='8081', debug=False, use_reloader=False)

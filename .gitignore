@@ -8,3 +8,7 @@ venv/
 tests/
 .cache/
 data/
+.DS_Store
+*.pt
+*.pth
+*.log

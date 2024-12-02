@@ -7,6 +7,8 @@ from models.image import ImageUnderstandingResult, ImageLabel
 from PIL import Image
 import importlib.util as importutil
 import numpy as np
+from transformers import AutoModel, AutoImageProcessor
+from infra.milvus import conn as milvus_conn
 
 class ImageUnderstanding:
     def __init__(self):
@@ -22,8 +24,10 @@ class ImageUnderstanding:
         self.text_feature = None
         self.caption_model = None
         self.caption_vis_processors = None
+        self.milvus_conn = milvus_conn
         self.__init_clip_model__()
         self.__init_caption_model__()
+        self.__init_embedding_model__()
 
     def __init_clip_model__(self):
         self.clip_model, self.clip_preprocess = load_from_name("ViT-B-16", device=self.device, download_root="./")
@@ -42,6 +46,10 @@ class ImageUnderstanding:
 
     def __init_caption_model__(self):
         self.caption_model, self.caption_vis_processors, _  = load_model_and_preprocess('blip_caption', model_type='base_coco', is_eval=True,  device=self.device)
+
+    def __init_embedding_model__(self):
+        self.embedding_processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
+        self.embedding_model = AutoModel.from_pretrained("google/vit-base-patch16-224").to(self.device)
 
     def label_image(self, path: str) -> list[ImageLabel]:
         if self.clip_model is None:
@@ -72,9 +80,28 @@ class ImageUnderstanding:
             pil_image = pil_image.convert("RGB")
         return self.caption_model.generate({"image": self.caption_vis_processors['eval'](pil_image).unsqueeze(0).to(self.device)})[0]
 
+    def image_embedding(self, path: str) -> np.ndarray:
+        '''
+        计算图像特征，并存入milvus
+        '''
+        image = Image.open(path)
+        inputs = self.embedding_processor(image, return_tensors="pt").to(self.device)
+        outputs = self.embedding_model(**inputs)
+        embedding = outputs.pooler_output.cpu().detach().numpy().flatten()
+
     def understand(self, path: str) -> ImageUnderstandingResult:
         labels = self.label_image(path)
         logging.info("Image Labels: %s", labels)
         caption = self.caption_image(path)
         logging.info("Image Caption: %s", caption)
+        embedding = self.image_embedding(path)
+        self.milvus_conn.insert(embedding, path)
+        logging.info("Image Embedding: %s", embedding)
         return ImageUnderstandingResult(labels, caption)
+    
+    def image_similarity(self, path: str) -> list[dict]:
+        embedding = self.image_embedding(path)
+        records = self.milvus_conn.search_by_vec(embedding)
+        results = []
+        for record in records:
+            results.append({"path": record.id, "score": record.distance})
