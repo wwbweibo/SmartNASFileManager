@@ -1,4 +1,4 @@
-from  magika import Magika
+from magika import Magika
 from pathlib import Path
 from models.file import FileUnderstandingResult
 from service.image_understanding import ImageUnderstanding

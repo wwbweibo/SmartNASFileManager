@@ -42,17 +42,21 @@ func initTaskServer(config internal.Config,
 	fileRepo domainFile.IFileRepository,
 ) *server.BackendTaskServer {
 	taskServer := server.NewBackendTaskServer()
-	fileScanOption := tasks.ScanOptions{}
+	fileScanOption := utils.ScanOptions{}
 	fileScanOption = fileScanOption.
 		OptionRootPath(config.NasRootPath).
 		OptionPlainPath(config.ScanOption.Path...).
 		OptionRegexPath(config.ScanOption.RegexPath...).
 		OptionExtensions(config.ScanOption.Extensions...)
-	imageCompressionTask := tasks.NewImageCompressionTask(config.NasRootPath, config.CachePath)
+	imageCompressionTask := tasks.NewImageCompressionTaskHandler(config.NasRootPath, config.CachePath)
+	sysInitTask := tasks.NewSysInitBackendTask(fileScanOption, fileRepo, config.DLConfiguration)
+	fileProcessTask := tasks.NewFileProcessTask(fileScanOption, fileRepo, config)
+
 	// register tasks here
 	taskServer.RegisterTask(
 		imageCompressionTask,
-		tasks.NewSysInitBackendTask(fileScanOption, fileRepo, config.DLConfiguration, *imageCompressionTask),
+		sysInitTask,
+		fileProcessTask,
 	)
 	return taskServer
 }

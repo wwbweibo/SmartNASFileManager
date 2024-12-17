@@ -21,6 +21,7 @@ func (f *FileApiControllers) InitRoute(r *gin.Engine) {
 	r.GET("/api/v1/dir", f.dirTree)
 	r.GET("/api/v1/file", f.listDir)
 	r.POST("/api/v1/file", f.listDir)
+	r.GET("/api/v1/file/group", f.listFileByGroup)
 }
 
 func (f *FileApiControllers) dirTree(c *gin.Context) {
@@ -44,4 +45,8 @@ func (f *FileApiControllers) listDir(c *gin.Context) {
 		return
 	}
 	c.JSON(200, resp)
+}
+
+func (f *FileApiControllers) listFileByGroup(ctx *gin.Context) {
+
 }

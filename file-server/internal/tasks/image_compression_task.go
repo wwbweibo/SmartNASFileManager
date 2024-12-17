@@ -3,6 +3,8 @@ package tasks
 import (
 	"context"
 	"fileserver/internal/domain/file"
+	"fileserver/internal/server"
+	"fileserver/internal/tasks/entity"
 	"fileserver/utils"
 	"image"
 	"image/jpeg"
@@ -13,31 +15,32 @@ import (
 	"github.com/nfnt/resize"
 )
 
-type ImageCompressionTask struct {
+type ImageCompressionTaskHandler struct {
 	imageChan   chan file.File
 	cacheDir    string
 	startAt     time.Time
 	nasRootPath string
-	cachePath   string
 }
 
-func NewImageCompressionTask(nasRootPath, cachePath string) *ImageCompressionTask {
-	return &ImageCompressionTask{
+func NewImageCompressionTaskHandler(nasRootPath, cachePath string) *ImageCompressionTaskHandler {
+	handler := &ImageCompressionTaskHandler{
 		imageChan:   make(chan file.File),
 		cacheDir:    cachePath,
 		nasRootPath: nasRootPath,
 	}
+	bus.RegisterHandler(handler)
+	return handler
 }
 
-func (t *ImageCompressionTask) GetTaskName() string {
+func (t *ImageCompressionTaskHandler) GetTaskName() string {
 	return "ImageCompressionTask"
 }
 
-func (t *ImageCompressionTask) GetRunningDuration() time.Duration {
+func (t *ImageCompressionTaskHandler) GetRunningDuration() time.Duration {
 	return time.Since(t.startAt)
 }
 
-func (t *ImageCompressionTask) Start(ctx context.Context) error {
+func (t *ImageCompressionTaskHandler) Start(ctx context.Context) error {
 	t.startAt = time.Now()
 	for {
 		select {
@@ -50,16 +53,20 @@ func (t *ImageCompressionTask) Start(ctx context.Context) error {
 	}
 }
 
-func (t *ImageCompressionTask) AddImage(image file.File) {
-	t.imageChan <- image
+func (t *ImageCompressionTaskHandler) Append(task server.ITask) {
+	if task.GetTaskName() != t.GetTaskName() {
+		return
+	}
+	tt := task.(*entity.ImageCompressionTask)
+	t.imageChan <- tt.File
 }
 
-func (t *ImageCompressionTask) Stop(ctx context.Context) error {
+func (t *ImageCompressionTaskHandler) Stop(ctx context.Context) error {
 	close(t.imageChan)
 	return nil
 }
 
-func (t *ImageCompressionTask) compressImage(_image file.File) {
+func (t *ImageCompressionTaskHandler) compressImage(_image file.File) {
 	// compress image
 	file, err := os.Open(t.nasRootPath + _image.Path)
 	if err != nil {
@@ -97,5 +104,4 @@ func (t *ImageCompressionTask) compressImage(_image file.File) {
 	if err != nil {
 		log.Printf("error encoding image %s: %v", _image.Path, err)
 	}
-	return
 }

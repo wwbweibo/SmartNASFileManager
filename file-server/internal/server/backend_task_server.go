@@ -9,12 +9,12 @@ import (
 // BackendTaskServer used to tracking all the backend task registered to this server.
 type BackendTaskServer struct {
 	// tasks is a map of task name to the task
-	tasks map[string]BackendTask
+	tasks map[string]BackendTaskHandler
 }
 
 func NewBackendTaskServer() *BackendTaskServer {
 	return &BackendTaskServer{
-		tasks: make(map[string]BackendTask),
+		tasks: make(map[string]BackendTaskHandler),
 	}
 }
 
@@ -29,7 +29,7 @@ func (b *BackendTaskServer) Start(ctx context.Context) error {
 	return errgroup.Wait()
 }
 
-func (b *BackendTaskServer) RegisterTask(tasks ...BackendTask) {
+func (b *BackendTaskServer) RegisterTask(tasks ...BackendTaskHandler) {
 	for _, task := range tasks {
 		b.tasks[task.GetTaskName()] = task
 	}

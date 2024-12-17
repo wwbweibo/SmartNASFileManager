@@ -4,6 +4,12 @@ type ListFileRequest struct {
 	Path string `json:"path" form:"path"`
 }
 
+type ListFileByGroupRequest struct {
+	Group string `json:"group" form:"group"`
+	Path  string `json:"path" form:"path"`
+	PageRequest
+}
+
 type ListFileResponseItem struct {
 	Path  string `json:"path"`
 	Name  string `json:"name"`

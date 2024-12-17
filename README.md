@@ -1,5 +1,8 @@
-# anfm 
+# SmartNASFileManager
 
+This project aims using AI to simplify the file management on NAS.
+
+### extra things when use this project
 
 decord install failed when install LAVIS:
 
