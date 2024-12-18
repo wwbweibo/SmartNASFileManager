@@ -110,7 +110,9 @@ func GetFileSize(path string) (int64, time.Time) {
 func CheckIsDir(path string) bool {
 	fileInfo, err := os.Stat(path)
 	if err != nil {
+		log.Default().Printf("error getting file stat for file %s: %v", path, err)
 		return false
 	}
+	log.Default().Printf("file %s is dir: %v", path, fileInfo.IsDir())
 	return fileInfo.IsDir()
 }

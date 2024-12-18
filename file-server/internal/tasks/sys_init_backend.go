@@ -47,7 +47,7 @@ func (s *SysInitBackendTask) Start(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		default:
-			if s.option.ShouldWatch(file) {
+			if s.option.ShouldWatch(file, false) {
 				domainFile.Root.Add(utils.GetDirectory(strings.Replace(file, s.option.RootPath, "", 1)))
 				bus.Send(&entity.FileProcessTask{
 					File: file,

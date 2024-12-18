@@ -61,9 +61,12 @@ func (opts ScanOptions) FileInExtensions(file string) bool {
 	return false
 }
 
-func (opts ScanOptions) ShouldWatch(file string) bool {
+func (opts ScanOptions) ShouldWatch(file string, containsDir bool) bool {
 	if opts.FileInPath(file) || opts.FileInRegexPath(file) {
 		if opts.FileInExtensions(file) {
+			return true
+		}
+		if containsDir && CheckIsDir(file) {
 			return true
 		}
 	}

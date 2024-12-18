@@ -72,7 +72,7 @@ func (f *FileSystemWatchTask) Start(ctx context.Context) (err error) {
 
 func (f *FileSystemWatchTask) onFileSystemEvent(event fsnotify.Event) {
 	log.Default().Printf("file system event: %v", event)
-	if !f.opts.ShouldWatch(event.Name) {
+	if !f.opts.ShouldWatch(event.Name, true) {
 		return
 	}
 	switch event.Op {
@@ -89,14 +89,16 @@ func (f *FileSystemWatchTask) onFileSystemEvent(event fsnotify.Event) {
 
 func (f *FileSystemWatchTask) onFileRemove(event fsnotify.Event) {
 	fileDBName := strings.Replace(event.Name, f.nasRootPath, "", 1)
-	if !(utils.CheckIsDir(event.Name)) {
-		f.repo.RemoveFile(context.Background(), fileDBName)
-	} else {
-		f.repo.RemoveDir(context.Background(), fileDBName)
-	}
+	f.repo.RemoveFile(context.Background(), fileDBName)
 }
 
 func (f *FileSystemWatchTask) onFileCreate(event fsnotify.Event) {
+	if utils.CheckIsDir(event.Name) {
+		log.Default().Printf("add watch path: %s", event.Name)
+		f.watcher.Add(event.Name)
+		return
+	}
+	// TODO: create event may not reliable, since some file will very huge, when create event trigger, the file may not ready, consider using chmod event, and using hashsum the check if the file content is changed.
 	task := entity.FileProcessTask{
 		File: event.Name,
 	}

@@ -77,7 +77,7 @@ func loadTree() {
 	// read file content
 	bts, err := os.ReadFile(internal.GetConfig().CachePath + "/tree.json")
 	if err != nil {
-		if os.IsNotExist(err) { 
+		if os.IsNotExist(err) {
 			return
 		}
 		panic(err)
