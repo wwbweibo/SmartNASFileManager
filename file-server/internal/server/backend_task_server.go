@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"log"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -22,6 +23,7 @@ func (b *BackendTaskServer) Start(ctx context.Context) error {
 	var errgroup errgroup.Group
 	// start a http server here
 	for _, task := range b.tasks {
+		log.Default().Printf("start task %s", task.GetTaskName())
 		errgroup.Go(func() error {
 			return task.Start(ctx)
 		})

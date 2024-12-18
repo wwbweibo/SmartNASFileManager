@@ -51,12 +51,13 @@ func initTaskServer(config internal.Config,
 	imageCompressionTask := tasks.NewImageCompressionTaskHandler(config.NasRootPath, config.CachePath)
 	sysInitTask := tasks.NewSysInitBackendTask(fileScanOption, fileRepo, config.DLConfiguration)
 	fileProcessTask := tasks.NewFileProcessTask(fileScanOption, fileRepo, config)
-
+	fileSystemWatchTask := tasks.NewFileSystemWatchTask(config.NasRootPath, fileScanOption, fileRepo)
 	// register tasks here
 	taskServer.RegisterTask(
 		imageCompressionTask,
 		sysInitTask,
 		fileProcessTask,
+		fileSystemWatchTask,
 	)
 	return taskServer
 }

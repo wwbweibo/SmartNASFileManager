@@ -31,7 +31,7 @@ func NewSysInitBackendTask(option utils.ScanOptions,
 }
 
 func (s *SysInitBackendTask) GetTaskName() string {
-	return "sys_init_backend"
+	return "SysInitBackendTask"
 }
 
 func (s *SysInitBackendTask) GetRunningDuration() time.Duration {
@@ -40,7 +40,7 @@ func (s *SysInitBackendTask) GetRunningDuration() time.Duration {
 
 func (s *SysInitBackendTask) Start(ctx context.Context) error {
 	s.startTime = time.Now()
-	files := utils.WalkDir(s.option.RootPath)
+	files, _ := utils.WalkDir(s.option.RootPath)
 	log.Default().Printf("found %d files", len(files))
 	for _, file := range files {
 		select {

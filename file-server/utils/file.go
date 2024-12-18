@@ -10,32 +10,37 @@ import (
 	"time"
 )
 
-func WalkDir(dir string) []string {
+// WalkDir walks the directory and returns all the files and directory in the directory
+func WalkDir(dir string) ([]string, []string) {
 	var _files []string
+	var _dirs []string
 	// check if the dir exist on the filesystem
-	log.Default().Printf("walking dir %s", dir)
 	info, err := os.Stat(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Default().Printf("dir %s does not exist", dir)
-			return []string{}
+			return []string{}, []string{}
 		} else {
 			log.Default().Printf("error reading dir %s: %v", dir, err)
-			return []string{}
+			return []string{}, []string{}
 		}
 	}
 	// check if the dir is a dir
 	if info.IsDir() {
 		// list dir
+		_dirs = append(_dirs, dir)
 		files, err := os.ReadDir(dir)
 		if err != nil {
 			log.Default().Printf("error reading dir %s: %v", dir, err)
-			return []string{}
+			return []string{}, []string{}
 		}
 		for _, f := range files {
 			if f.IsDir() {
 				// recursively walk the dir
-				_files = append(_files, WalkDir(path.Join(dir, f.Name()))...)
+				_dir := path.Join(dir, f.Name())
+				subfiles, subdirs := WalkDir(_dir)
+				_files = append(_files, subfiles...)
+				_dirs = append(_dirs, subdirs...)
 			} else {
 				// append the file to the list
 				_files = append(_files, path.Join(dir, f.Name()))
@@ -44,7 +49,7 @@ func WalkDir(dir string) []string {
 	} else {
 		_files = append(_files, dir)
 	}
-	return _files
+	return _files, _dirs
 }
 
 func GetDirectory(f string) string {

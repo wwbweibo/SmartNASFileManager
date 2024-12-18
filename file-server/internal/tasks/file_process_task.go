@@ -8,7 +8,6 @@ import (
 	"fileserver/internal/server"
 	"fileserver/internal/tasks/entity"
 	"fileserver/utils"
-	"fmt"
 	"log"
 	"strings"
 	"sync"
@@ -29,12 +28,14 @@ func NewFileProcessTask(
 	repo domainFile.IFileRepository,
 	config internal.Config,
 ) *FileProcessTaskHandler {
-	return &FileProcessTaskHandler{
+	handler := &FileProcessTaskHandler{
 		option:   option,
 		repo:     repo,
 		config:   config,
 		taskChan: make(chan server.ITask, 100),
 	}
+	bus.RegisterHandler(handler)
+	return handler
 }
 
 func (t *FileProcessTaskHandler) GetTaskName() string {
@@ -84,7 +85,6 @@ func (t *FileProcessTaskHandler) singleFileHandler(ctx context.Context, file str
 	_file.Checksum = utils.Sha256(t.option.RootPath + file)
 	if dbFile.Checksum == _file.Checksum {
 		if !(dbFile.Group == "unknown" || dbFile.Group == "") {
-			fmt.Printf("file %s has not changed\n", file)
 			return
 		}
 	}
