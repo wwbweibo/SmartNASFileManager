@@ -1,1 +1,7 @@
 nas_root_path: /Users/weibo/code/myself/anfm/tests
+ollama:
+  enabled: true
+  host: localhost 
+  port: 11434
+  model: llama3.2-vision
+  

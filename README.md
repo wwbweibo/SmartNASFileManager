@@ -2,6 +2,32 @@
 
 This project aims using AI to simplify the file management on NAS.
 
+## TODO List
+
+- File System Base:
+  - [x] File Browser
+  - [ ] File Manual Tag 
+  - [ ] FileIndex create and update at realtime 
+  - [ ] FileSystem event watch
+  - [ ] File encryption at write
+  - [ ] Multi NAS Support
+- Image Files:
+  - [X] Image Browser
+  - [X] Image Snapshot
+  - [X] Image Caption Using Local Vision Model
+  - [X] Image Auto Tag
+  - [ ] Image caption and tag using LLM
+  - [ ] Image search by tag and caption
+  - [ ] Image search by similar
+  - [ ] RAW Image Support
+- Video Files: 
+  - [ ] Video Player
+  - [ ] Video Caption
+- Document Files:
+  - [ ] Support Document preview and edit
+  - [ ] Using RAG to build knowledge base
+  - [ ] Document search using vec
+
 ### extra things when use this project
 
 decord install failed when install LAVIS:

@@ -1,5 +1,7 @@
 import logging
 import torch
+import base64
+from io import BytesIO
 import cn_clip.clip as clip
 from cn_clip.clip import load_from_name
 from lavis.models import load_model_and_preprocess
@@ -9,15 +11,18 @@ import importlib.util as importutil
 import numpy as np
 from transformers import AutoModel, AutoImageProcessor
 from infra.milvus import conn as milvus_conn
+from infra.ollama import OllamaClient, Config as OllamaConfig
+from config import Config
 
 class ImageUnderstanding:
-    def __init__(self):
+    def __init__(self, config: Config):
         # check if torch_directml is available
         if importutil.find_spec("torch_directml") is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
             import torch_directml
             self.device = torch_directml.device()
+        self.config = config
         self.clip_model = None
         self.clip_preprocess = None
         self.text_labels = None
@@ -25,8 +30,10 @@ class ImageUnderstanding:
         self.caption_model = None
         self.caption_vis_processors = None
         self.milvus_conn = milvus_conn
-        self.__init_clip_model__()
-        self.__init_caption_model__()
+        if not config.ollama.enabled:
+            # if ollama is not enabled, init local clip and caption model
+            self.__init_clip_model__()
+            self.__init_caption_model__()
         self.__init_embedding_model__()
 
     def __init_clip_model__(self):
@@ -88,15 +95,78 @@ class ImageUnderstanding:
         inputs = self.embedding_processor(image, return_tensors="pt").to(self.device)
         outputs = self.embedding_model(**inputs)
         embedding = outputs.pooler_output.cpu().detach().numpy().flatten()
+        return embedding
 
-    def understand(self, path: str) -> ImageUnderstandingResult:
+    def image_understand_with_local_model(self, path: str):
         labels = self.label_image(path)
         logging.info("Image Labels: %s", labels)
         caption = self.caption_image(path)
         logging.info("Image Caption: %s", caption)
+        return labels, caption
+    
+    def image_understand_with_ollama(self, path: str):
+        image = Image.open(path)
+        # resize long side to 1024
+        width, height = image.size
+        if width > height:
+            if width > 1024:
+                height = int(1024 * height / width)
+                width = 1024
+        if width <= height:
+            if height > 1024:
+                width = int(1024 * width / height)
+                height = 1024
+        image = image.resize((width, height))
+        # 写入到byte数组
+        buffered = BytesIO()
+        image.save(buffered, format="JPEG")
+        bts = buffered.getvalue()
+        b64str = base64.b64encode(bts).decode("utf-8")
+        prompt = '''You are an experienced art critic and photographer who specializes in evaluating works of art using simple and beautiful language.
+Now, please use a short paragraph to describe the content of the picture you saw, and use this paragraph as the 'caption' in your answer.
+After that, you are asked to give 3-5 words that summarize the image in a high level and are used to label the image you saw, these words will be used as 'tags' in your answer.
+Finally, you will need to rate the image from four perspectives: 'Composition', 'Light and Shadow', 'Color' and 'Idea of the Work'. You need to rate the image from four perspectives: 'composition', 'light and shadow', 'color' and 'ideas', and give a final score of 0-10 on a scale of 0.1. The four scores and the overall rating will be used together as the 'scores' in your answer, and you will also be given a reason for why you gave the scores you gave from the four perspectives mentioned above, which will be used as the 'reason' for your answer.
+Your answer needs to use the json format as a return, if you are not sure what you are seeing, please just return the empty Json object, e.g. '{}'. The content in your answer MUST be in 'Chinese', including 'caption', 'tags' and 'reason', any Non-Chinese answer will be considered as an invalid answer.
+Your answer should not contain any subjective personal pronouns, e.g. 'I', 'we' etc. When you think you need to use them, please use words such as 'audience', 'others' etc. instead.'''
+        format = {
+        "type": "object",
+        "properties": {
+            "caption": {
+                "type": "string"
+            },
+            "tags": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            "score": {
+                "type": "array",
+                "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 10
+                }
+            },
+            "reason": {
+                "type": "string"
+            }
+        },
+        "required": ["caption", "tags", "score", "reason"]
+    }
+        result = OllamaClient(config=self.config.ollama).request_ollama_generate(body=prompt, image=[b64str], format=format)
+        # 由ollama输出的标签没有置信度
+        return [ImageLabel(x, 0.0) for x in result['tags']], result['caption']
+
+    def understand(self, path: str) -> ImageUnderstandingResult:
+        if self.config.ollama.enabled: 
+            # using ollama
+            labels, caption = self.image_understand_with_ollama(path)
+        else:
+            # using local model
+            labels, caption = self.image_understand_with_local_model(path)
         embedding = self.image_embedding(path)
         self.milvus_conn.insert(embedding, path)
-        logging.info("Image Embedding: %s", embedding)
         return ImageUnderstandingResult(labels, caption)
     
     def image_similarity(self, path: str) -> list[dict]:
@@ -105,3 +175,4 @@ class ImageUnderstanding:
         results = []
         for record in records:
             results.append({"path": record.id, "score": record.distance})
+        return results

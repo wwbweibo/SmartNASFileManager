@@ -10,7 +10,6 @@ import (
 	"fileserver/utils"
 	"log"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -55,6 +54,7 @@ func (t *FileProcessTaskHandler) Start(ctx context.Context) error {
 		case task := <-t.taskChan:
 			_task := (task).(*entity.FileProcessTask)
 			t.singleFileHandler(ctx, _task.File)
+			log.Default().Printf("file process task: %s complete", _task.File)
 		}
 	}
 }
@@ -89,26 +89,29 @@ func (t *FileProcessTaskHandler) singleFileHandler(ctx context.Context, file str
 		}
 	}
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		result, err := dl.NewClient(t.config.DLConfiguration).Understanding(ctx, dl.UnderstandingRequest{
-			Path: file,
-		})
-		if err != nil {
-			log.Default().Printf("error getting file type: %v", err)
-			return
-		}
-		_file.SetFileTypeFromUnderstanding(result)
-	}()
+	// wg := sync.WaitGroup{}
+	// wg.Add(1)
+	// go func() {
+	// defer wg.Done()
+	result, err := dl.NewClient(t.config.DLConfiguration).Understanding(ctx, dl.UnderstandingRequest{
+		Path: file,
+	})
+	if err != nil {
+		log.Default().Printf("error getting file type: %v", err)
+	} else {
+		log.Default().Printf("file understand result: %v", result)
+	}
+	_file.SetFileTypeFromUnderstanding(result)
+	// }()
 
 	// insert into database
-	wg.Wait()
+	// wg.Wait()
 	if _file.Group == "image" {
+		log.Default().Printf("send image compression task: %s", file)
 		bus.Send(&entity.ImageCompressionTask{File: _file})
 	}
-	err := t.repo.CreateOrUpdateFile(ctx, _file)
+	log.Default().Printf("insert file %s", file)
+	err = t.repo.CreateOrUpdateFile(ctx, _file)
 	if err != nil {
 		log.Default().Printf("error inserting file %s: %v", file, err)
 	}

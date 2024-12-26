@@ -11,6 +11,7 @@ func init() {
 	loadTree()
 }
 
+// TODO: refactor into sqlite.
 var Root = &DirNode{
 	Name:     "/",
 	Path:     "/",

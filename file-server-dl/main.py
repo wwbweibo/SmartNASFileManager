@@ -1,16 +1,15 @@
 from magika import Magika
 from flask import Flask, request
 from service.file_understanding import FileUnderstanding
+from config import Config
 import logging
 import yaml
 
-logging.basicConfig(level=logging.DEBUG)
-global config
-
-# read config from config.yaml file then parse into config object
-with open("config.yaml", "r") as file:
-    config = yaml.safe_load(file)
-    
+logging.basicConfig(level=logging.INFO)
+config = Config().from_yaml_file("config.yaml")
+print("===============")
+print(config.__dict__)
+print(config.ollama.__dict__)
 fileUnderstanding = FileUnderstanding(config=config)
 logging.info("File Understanding Service Started")
 
